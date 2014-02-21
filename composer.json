@@ -1,0 +1,31 @@
+{
+	"name": "spacedealer/yii2-loggly",
+	"description": "Use Loggly as log target within Yii2 apps.",
+	"keywords": ["yii2", "log", "loggly"],
+	"homepage": "https://bitbucket.org/spacedealer/yii2-loggly",
+	"type": "yii2-extension",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Dirk Adler",
+			"email": "adler@spacedealer.de",
+			"homepage": "http://www.spacedealer.de",
+			"role": "Developer"
+		}
+	],
+	"support": {
+		"issues": "https://bitbucket.org/spacedealer/yii2-loggly/issues?status=new&status=open",
+		"source": "https://bitbucket.org/spacedealer/yii2-loggly"
+	},
+	"minimum-stability": "dev",
+	"require-dev": {
+		"php": ">=5.4.0",
+		"composer/installers": "~1.0",
+		"yiisoft/yii2": "dev-master"
+	},
+	"autoload": {
+		"psr-4": {
+			"spacedealer\\loggly\\": ""
+		}
+	}
+}
