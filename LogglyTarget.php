@@ -60,8 +60,15 @@ class LogglyTarget extends Target
 	 */
 	private $_curl;
 
-	private $_tagsUrl = '';
+	/**
+	 * @var string log url including customer token and optional tags
+	 */
+	private $_url;
 
+	/**
+	 * Initialize
+	 * @throws \yii\base\InvalidConfigException
+	 */
 	public function init()
 	{
 		if (!is_string($this->customerToken) || strlen($this->customerToken) !== 36) {
@@ -70,9 +77,7 @@ class LogglyTarget extends Target
 		if ($this->cert === null) {
 			$this->cert = __DIR__ . '/cert.pem';
 		}
-		if (!empty($this->tags)) {
-			$this->_tagsUrl = '/tag/' . implode(',', $this->tags) . '/';
-		}
+		$this->_url = $this->url . $this->customerToken . (empty($this->tags) ? '' : '/tag/' . implode(',', $this->tags) . '/');
 	}
 
 	/**
@@ -124,8 +129,8 @@ class LogglyTarget extends Target
 			return $this->_curl;
 		}
 
-		$this->curl = curl_init();
-		curl_setopt($this->_curl, CURLOPT_URL, $this->url . $this->customerToken . $this->tagsUrl);
+		$this->_curl = curl_init();
+		curl_setopt($this->_curl, CURLOPT_URL, $this->_url);
 		curl_setopt($this->_curl, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
 		curl_setopt($this->_curl, CURLOPT_TIMEOUT, 10);
 		curl_setopt($this->_curl, CURLOPT_RETURNTRANSFER, 1);
