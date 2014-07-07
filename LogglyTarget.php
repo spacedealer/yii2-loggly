@@ -26,126 +26,141 @@ use yii\log\Target;
  */
 class LogglyTarget extends Target
 {
-	/**
-	 * @var string loggly customer token
-	 */
-	public $customerToken;
+    /**
+     * @var string loggly customer token
+     */
+    public $customerToken;
 
-	/**
-	 * @var bool
-	 */
-	public $finishRequest = true;
+    /**
+     * @var bool
+     */
+    public $finishRequest = true;
 
-	/**
-	 * @var string
-	 */
-	public $url = 'https://logs-01.loggly.com/inputs/';
+    /**
+     * @var string
+     */
+    public $url = 'https://logs-01.loggly.com/inputs/';
 
-	/* @var string */
-	public $cert;
+    /* @var string */
+    public $cert;
 
-	/**
-	 * @var bool whether ips are logged. disabled by default.
-	 */
-	public $enableIp = false;
+    /**
+     * @var bool whether ips are logged. disabled by default.
+     */
+    public $enableIp = false;
 
-	/**
-	 * @var array optional list of tags
-	 * @see https://www.loggly.com/docs/tags/
-	 */
-	public $tags = array();
+    /**
+     * @var bool whether trail id is logged. enabled by default.
+     */
+    public $enableTrail = true;
 
-	/**
-	 * @var resource cURL-Handle
-	 */
-	private $_curl;
+    /**
+     * @var array optional list of tags
+     * @see https://www.loggly.com/docs/tags/
+     */
+    public $tags = array();
 
-	/**
-	 * @var string log url including customer token and optional tags
-	 */
-	private $_url;
+    /**
+     * @var resource cURL-Handle
+     */
+    private $_curl;
 
-	/**
-	 * Initialize
-	 * @throws \yii\base\InvalidConfigException
-	 */
-	public function init()
-	{
-		if (!is_string($this->customerToken) || strlen($this->customerToken) !== 36) {
-			throw new InvalidConfigException("Loggly customer token must be a valid 36 character string");
-		}
-		if ($this->cert === null) {
-			$this->cert = __DIR__ . '/cert.pem';
-		}
-		$this->_url = $this->url . $this->customerToken . (empty($this->tags) ? '' : '/tag/' . implode(',', $this->tags) . '/');
-	}
+    /**
+     * @var string log url including customer token and optional tags
+     */
+    private $_url;
 
-	/**
-	 * Push log [[messages]] to Loggly.
-	 */
-	public function export()
-	{
-		if ($this->finishRequest && function_exists('fastcgi_finish_request')) {
-			session_write_close();
-			fastcgi_finish_request();
-		}
+    /**
+     * @var string md5 based random id. id will be generated during init and therefor will be unique within each app execution call.
+     */
+    private $_trail;
 
-		$ch = $this->initCurl();
+    /**
+     * Initialize
+     *
+     * @throws \yii\base\InvalidConfigException
+     */
+    public function init()
+    {
+        if (!is_string($this->customerToken) || strlen($this->customerToken) !== 36) {
+            throw new InvalidConfigException("Loggly customer token must be a valid 36 character string");
+        }
+        if ($this->cert === null) {
+            $this->cert = __DIR__ . '/cert.pem';
+        }
+        $this->_url = $this->url . $this->customerToken . (empty($this->tags) ? '' : '/tag/' . implode(',', $this->tags) . '/');
+        $this->_trail = md5(rand() . rand() . rand() . rand());
+    }
 
-		// process messages
-		foreach ($this->messages as $message) {
-			$data = json_encode($this->formatMessage($message), JSON_FORCE_OBJECT);
-			curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-			curl_exec($ch);
-		}
-	}
+    /**
+     * Push log [[messages]] to Loggly.
+     */
+    public function export()
+    {
+        if ($this->finishRequest && function_exists('fastcgi_finish_request')) {
+            session_write_close();
+            fastcgi_finish_request();
+        }
 
-	/**
-	 * @param array $message
-	 * @return array
-	 */
-	public function formatMessage($message)
-	{
-		list($text, $level, $category, $timestamp) = $message;
-		$level = Logger::getLevelName($level);
-		$msg = [
-			'timestamp' => date('Y/m/d H:i:s', $timestamp),
-			'level' => $level,
-			'category' => $category,
-			'message' => $text,
-		];
-		if ($this->enableIp) {
-			$msg['ip'] = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '127.0.0.1';
-		}
-		return $msg;
-	}
+        $ch = $this->initCurl();
 
-	/**
-	 * @return resource
-	 */
-	private function initCurl()
-	{
-		if ($this->_curl !== null) {
-			return $this->_curl;
-		}
+        // process messages
+        foreach ($this->messages as $message) {
+            $data = json_encode($this->formatMessage($message), JSON_FORCE_OBJECT);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            curl_exec($ch);
+        }
+    }
 
-		$this->_curl = curl_init();
-		curl_setopt($this->_curl, CURLOPT_URL, $this->_url);
-		curl_setopt($this->_curl, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
-		curl_setopt($this->_curl, CURLOPT_TIMEOUT, 10);
-		curl_setopt($this->_curl, CURLOPT_RETURNTRANSFER, 1);
-		curl_setopt($this->_curl, CURLOPT_POST, 1);
-		curl_setopt($this->_curl, CURLOPT_SSL_VERIFYHOST, 2);
-		curl_setopt($this->_curl, CURLOPT_SSL_VERIFYPEER, true);
-		curl_setopt($this->_curl, CURLOPT_CAINFO, $this->cert);
+    /**
+     * @param array $message
+     * @return array
+     */
+    public function formatMessage($message)
+    {
+        list($text, $level, $category, $timestamp) = $message;
+        $level = Logger::getLevelName($level);
+        $msg = [
+            'timestamp' => date('Y/m/d H:i:s', $timestamp),
+            'level' => $level,
+            'category' => $category,
+            'message' => $text,
+        ];
+        if ($this->enableIp) {
+            $msg['ip'] = isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : '127.0.0.1';
+        }
+        if ($this->enableTrail) {
+            $msg['trail'] = $this->_trail;
+        }
+        return $msg;
+    }
 
-		return $this->_curl;
-	}
+    /**
+     * @return resource
+     */
+    private function initCurl()
+    {
+        if ($this->_curl !== null) {
+            return $this->_curl;
+        }
 
-	public function __destruct()
-	{
-		if ($this->_curl !== null) {
-			curl_close($this->_curl);
-		}
-	}
+        $this->_curl = curl_init();
+        curl_setopt($this->_curl, CURLOPT_URL, $this->_url);
+        curl_setopt($this->_curl, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+        curl_setopt($this->_curl, CURLOPT_TIMEOUT, 10);
+        curl_setopt($this->_curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($this->_curl, CURLOPT_POST, 1);
+        curl_setopt($this->_curl, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($this->_curl, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($this->_curl, CURLOPT_CAINFO, $this->cert);
+
+        return $this->_curl;
+    }
+
+    public function __destruct()
+    {
+        if ($this->_curl !== null) {
+            curl_close($this->_curl);
+        }
+    }
 } 
