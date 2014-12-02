@@ -1,14 +1,15 @@
-Loggly Extension for Yii 2
-==========================
+# Loggly Extension for Yii2
 
 This extensions provides support for [Loggly](http://loggly.com/) as log target for [Yii2](https://github.com/yiisoft/yii2) applications.
 It is partially based on the yii 1.* extension [yii-loggly](https://github.com/aotd1/yii-loggly) by Alexey Ashurok.
 
-**Attention**: Please do not use in production environments. It‘s WIP.
+## Requirements
 
-
-Installation
-------------
+ - php >= 5.4
+ - php5-curl extension
+ - Yii2
+ 
+## Installation
 
 The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
 
@@ -26,12 +27,24 @@ or add
 
 to the require section of your `composer.json` file.
 
-
-Usage
------
+## Usage
 
 Once the extension is installed, simply modify your application configuration as follows:
 
 ```php
-//tbd.
+'log' => [
+	'targets' => [
+		'loggly' => [
+			'class' => 'spacedealer\loggly\Target',
+			'customerToken' => 'your_customer_token',
+			'levels' => ['error', 'warning', 'info', 'trace'],
+			'tags' => ['console', 'staging']
+			'enableIp' => false,
+			'enableTrail' => true,
+		],
+	],
+],
 ```
+## Resources
+
+ - [GitHub](https://github.com/spacedealer/yii2-loggly)

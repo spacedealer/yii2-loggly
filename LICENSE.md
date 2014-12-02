@@ -1,4 +1,4 @@
-The yii2-iron-io extension is free software. It is released
+The yii2-loggly extension is free software. It is released
 under the terms of the following BSD License.
 
 Copyright (c) 2014, spacedealer GmbH (http://www.spacedealer.de).
