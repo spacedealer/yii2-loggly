@@ -1,4 +1,5 @@
 pre_composer_script: |
     #!/bin/bash
-
     composer global require "fxp/composer-asset-plugin:1.0.0-beta4"
+php_ini: |
+    extension=curl.so
