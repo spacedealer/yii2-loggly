@@ -2,7 +2,7 @@
 /**
  * Target.php file.
  *
- * Post logs to [Loggly](http://loggly.com/) with this log target class.
+ * Post log messages to [Loggly](http://loggly.com/) with this log target class.
  * Loggly is a cloud based log management service:
  *
  * - https://www.loggly.com/
