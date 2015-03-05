@@ -50,6 +50,7 @@ Once the extension is installed, simply modify your application configuration as
 	],
 ],
 ```
+
 ## Resources
 
  - [GitHub](https://github.com/spacedealer/yii2-loggly)
