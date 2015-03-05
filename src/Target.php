@@ -63,9 +63,14 @@ class Target extends \yii\log\Target
     public $trail;
 
     /**
+     * @var int maximal time the curl connection phase is allowed to take in seconds.
+     */
+    public $connectTimeout = 5;
+
+    /**
      * @var int maximal time the curl request is allowed to take in seconds.
      */
-    public $timeout = 10;
+    public $timeout = 5;
 
     /**
      * @var array optional list of tags
@@ -181,6 +186,7 @@ class Target extends \yii\log\Target
         $this->_curl = curl_init();
         curl_setopt($this->_curl, CURLOPT_URL, $this->getUrl());
         curl_setopt($this->_curl, CURLOPT_HTTPHEADER, ['Content-type: application/json']);
+        curl_setopt($this->_curl, CURLOPT_CONNECTTIMEOUT, $this->connectTimeout);
         curl_setopt($this->_curl, CURLOPT_TIMEOUT, $this->timeout);
         curl_setopt($this->_curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($this->_curl, CURLOPT_POST, 1);
