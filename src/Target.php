@@ -40,10 +40,11 @@ class Target extends \yii\log\Target
     /**
      * @var string
      */
-    public $baseUrl = 'https://logs-01.loggly.com/inputs/';
+    public $baseUrl = 'https://logs-01.loggly.com';
 
     /**
-     * @var string
+     * @var string Path to cert file. If not set bundled cert.pem is used.
+     * @see https://www.loggly.com/docs/rsyslog-tls-configuration/
      */
     public $cert;
 
@@ -79,6 +80,11 @@ class Target extends \yii\log\Target
     public $tags = [];
 
     /**
+     * @var bool Whether to use bulk upload of messages.
+     */
+    public $bulk = false;
+
+    /**
      * @var resource cURL-Handle
      */
     private $_curl;
@@ -108,13 +114,15 @@ class Target extends \yii\log\Target
             throw new InvalidConfigException("Certificate file '{$this->cert}' not found.");
         }
 
-        // prepare loggly post url
-        $this->_url = $this->baseUrl . $this->customerToken . (empty($this->tags) ? '' : '/tag/' . implode(',', $this->tags) . '/');
-
         // init trail id
         if (empty($this->trail)) {
             $this->trail = md5(rand() . rand() . rand() . rand());
         }
+
+        // init endpoint url
+        $endpoint = ($this->bulk === true) ? '/bulk/' : '/inputs/';
+        $tags = empty($this->tags) ? '' : '/tag/' . implode(',', $this->tags) . '/';
+        $this->_url = $this->baseUrl . $endpoint . $this->customerToken . $tags;
     }
 
     /**
@@ -140,10 +148,20 @@ class Target extends \yii\log\Target
         $ch = $this->initCurl();
 
         // process messages
-        foreach ($this->messages as $message) {
-            $data = json_encode($this->formatMessage($message), JSON_FORCE_OBJECT);
+        if ($this->bulk === true) {
+            $messages = [];
+            foreach ($this->messages as $message) {
+                $messages[] = json_encode($this->formatMessage($message), JSON_FORCE_OBJECT);
+            }
+            $data = implode("\n", $messages);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
             curl_exec($ch);
+        } else {
+            foreach ($this->messages as $message) {
+                $data = json_encode($this->formatMessage($message), JSON_FORCE_OBJECT);
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+                curl_exec($ch);
+            }
         }
     }
 
@@ -169,6 +187,7 @@ class Target extends \yii\log\Target
         if ($this->enableTrail) {
             $msg['trail'] = $this->trail;
         }
+
         return $msg;
     }
 
