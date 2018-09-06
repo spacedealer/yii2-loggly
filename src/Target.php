@@ -57,6 +57,11 @@ class Target extends \yii\log\Target
      * @var bool whether trail id is logged. disabled by default.
      */
     public $enableTrail = false;
+    
+    /**
+     * @var boolean whether trace is logged. disabled by default.
+     */
+    public $enableTrace = false;
 
     /**
      * @var string md5 based random id. will be generated if not set.
@@ -173,7 +178,7 @@ class Target extends \yii\log\Target
      */
     public function formatMessage($message)
     {
-        list($text, $level, $category, $timestamp) = $message;
+        list($text, $level, $category, $timestamp, $traces) = $message;
         $level = Logger::getLevelName($level);
         $msg = [
             'timestamp' => date('Y/m/d H:i:s', $timestamp),
@@ -186,6 +191,20 @@ class Target extends \yii\log\Target
         }
         if ($this->enableTrail) {
             $msg['trail'] = $this->trail;
+        }
+        if ($this->enableTrace) {
+            /*
+             * since loggly has some issues with nested json:
+             * format array with minimal nesting
+             */
+            $toLog = [];
+            foreach ($traces as $trace) {
+                if (empty($trace['file'])) {
+                    continue;
+                }
+                $toLog[] = "{$trace['file']}({$trace['line']})";
+            }
+            $msg['trace'] = $toLog;
         }
 
         return $msg;
